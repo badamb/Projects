@@ -1,0 +1,220 @@
+import numpy as np
+import numpy.random as rand
+import matplotlib
+import matplotlib.pyplot as plt
+
+# part a)
+def make_deck(seed=12345):
+    """
+    This function has one argument seed that may have value None or some positive
+    integer. Its default value is 12345. The function will return a 1-dimensional
+    NumPy array that contains a random shuffling of the integers from 1 to 54, inclusive.
+    :param seed: integer
+    :return: numpy array
+    """
+    deck = np.arange(1,55)
+    rand.seed(seed)
+    rand.shuffle(deck)
+    return deck
+
+# part b)
+def suit(i):
+    """
+    This function has one integer argument i that represents a card from the deck.
+    The function will return the suit of this card as one of the strings: ‘club’,
+    ‘diamond’, ‘heart’, or ‘spade’.
+    :param i: integer
+    :return: string
+
+    >>> suit(10)
+    'club'
+    >>> suit(20)
+    'diamond'
+    >>> suit(30)
+    'heart'
+    """
+    if i >=1 and i <= 13:
+        return 'club'
+    elif i >13 and i <= 26:
+        return 'diamond'
+    elif i >26 and i <= 39:
+        return 'heart'
+    elif i >39 and i <= 52:
+        return 'spade'
+    else:
+        return None
+
+# part c)
+def rank(i):
+    """
+    This function has one integer argument i that represents a card from the deck.
+    The function will return the rank of this card as a tuple whose first entry is
+    the numeric rank of the card, and whose second entry is the rank of the card,
+    as a string.
+    :param i: integer
+    :return: tuple
+
+    >>> rank(1)
+    (14,'Ace')
+    >>> rank(50)
+    (11, 'Jack')
+    >>> rank(27)
+    (14, 'Ace')
+    """
+    if i == 53 or i == 54:
+        return 15, 'Joker'
+    d = 1 + ((i-1) % 13)
+    if 2 <= d <= 10:
+        return d, str(d)
+    elif d == 1:
+        return 14, 'Ace'
+    elif d == 11:
+        return 11, 'Jack'
+    elif d == 12:
+        return 12, 'Queen'
+    elif d == 13:
+        return 13, 'King'
+
+# part d)
+def deal_hand(deck, card_num, hand_size = 10):
+    """
+    This function will return a 1-dimensional NumPy array of length hand_size that
+    consists of the sequence of numbers from the deck, starting with deck[card_num].
+    :param deck: numpy array
+    :param card_num: integer
+    :param hand_size: integer
+    :return: numpy array
+    """
+    if card_num+hand_size > 54:
+        return None
+    hand = deck[card_num:card_num+hand_size]
+    return hand
+
+# part e)
+def round(card0, card1):
+    """
+    This function has two arguments, card0 and card1 that represent two different
+    cards from the deck that are being played by player0 and player1 respectively. This
+    function will return either 0 or 1 depending on who's card has the greater value and
+    also return -1 if both cards happen to be jokers.
+    :param card0: integer
+    :param card1: integer
+    :return: integer
+
+    >>> round(6, 28)
+    0
+    >>> round(14, 27)
+    1
+    >>> round(5, 16)
+    0
+    """
+    if (card0 == 53 or card0 == 54) and (card1 == 53 or card1 == 54):
+        return -1
+    if rank(card0) == rank(card1):
+        if suit(card0) > suit(card1):
+            return 0
+        if suit(card0) < suit(card1):
+            return 1
+    elif rank(card0) > rank(card1):
+        return 0
+    elif rank(card0) < rank(card1):
+        return 1
+
+# part f)
+def play_game(game_length=10, seed=None):
+    """
+    This function has two arguments, game_length, an integer that is equal to the
+    number of rounds to be played in the game, and seed, a seed to be used to
+    randomly generate a deck of cards, using the NumPy random submodule. This function
+    will return a tuple of 2 numbers, first number is the number of rounds player0
+    won and the second number is the number of rounds player1 has won.
+    :param game_length: integer
+    :param seed: a integer
+    :return: a tuple
+
+    >>> play_game(10, 12345)
+    (6,4)
+    >>> play_game(10,None)
+    (7,3)
+    >>> play_game(5,12346)
+    (2,3)
+    """
+    score0 = 0
+    score1 = 0
+    deck = make_deck(seed)
+    player0 = deck[:game_length]
+    player1 = deck[game_length:game_length+game_length]
+    for i in range(game_length):
+        result = round(player0[i],player1[i])
+        if result == 0:
+            score0+=1
+        elif result == 1:
+            score1+=1
+        else:
+            score0+=0
+            score1+=0
+    return (score0, score1)
+
+# part g)
+def sim_games(game_length=10, num_games=10000):
+    """
+    This function will simulate the running of num_games many games of Suit,
+    each of length game_length. This function will return arrays the length of num_games
+    and the number of rounds won for player0 and player1 in those arrays.
+    :param game_length: integer
+    :param num_games: integer
+    :return: numpy array
+    """
+    array=[]
+    for games in range(num_games):
+        array.append(play_game(game_length))
+
+    return np.array(array)
+
+# part h)
+def game_stats(sims, game_length):
+    """
+    This function has two arguments, a NumPy array of the type that is produced
+    by the function sim_games and an integer that provides the number of rounds
+    in the games that were simulated. The function returns the number of wins each
+    player has and the avg of their scores depending on the length of the array and
+    the product of the scores for player0 and player1.
+    :param sims: an numpy array
+    :param game_length: integer
+    :return: tuple of ((wins0,avg0), (wins1,avg1), prod)
+
+    >>> sims = [[3, 7], [3, 7], [5, 5], [4, 5]]
+    >>> game_stats(sims,10)
+    ((0, 3.75), (3, 6.0), 21.75)
+
+    >>> sims = sim_games(10,10000)
+    >>> game_stats(sims,10)
+    ((3760, 4.9995), (3749, 4.9938), 22.4699) * Varies on sims array *
+    """
+    win0 = 0
+    avg0 = 0
+    win1 = 0
+    avg1 = 0
+    for game in sims:
+        avg0 += game[0]
+        avg1 += game[1]
+        if round(game[0], game[1]) == 0:
+            win0 += 1
+        elif round(game[0], game[1]) == 1:
+            win1 += 1
+    avg0 = avg0 / len(sims)
+    avg1 = avg1 / len(sims)
+    prod = (sum(np.prod(sims, axis=1))) / len(sims)
+
+    rounds = list(sims[:,0])
+    d = dict((x, rounds.count(x)) for x in set(rounds))
+    y, x = zip(*[(k, v) for k, v in d.items()])
+
+    plt.title("Number of rounds on, by game, for player 0")
+    plt.xlabel("Number of rounds won")
+    plt.ylabel("Number of games")
+    plt.hist(y, weights=x)
+    plt.axis([0, game_length + 1, 0, max(d.values()) + 200])
+    plt.savefig("badamb_plot.png")
+
+    return ((win0, avg0), (win1, avg1), prod)
